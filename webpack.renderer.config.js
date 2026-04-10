@@ -1,0 +1,16 @@
+const rules = [
+  ...require("./webpack.rules.js"),
+  {
+    test: /\.css$/,
+    use: [{ loader: "style-loader" }, { loader: "css-loader" }],
+  },
+];
+
+module.exports = {
+  module: {
+    rules,
+  },
+  resolve: {
+    extensions: [".js", ".ts", ".jsx", ".tsx", ".css"],
+  },
+};

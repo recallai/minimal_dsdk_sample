@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recording - Minimal Desktop Recorder Sample</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1 id="recording-title">Recording</h1>
+      <a href="/" class="back-link">← Back to Recordings</a>
+    </header>
+    <div class="recording-detail">
+      <div class="video-section">
+        <video id="recording-video" controls></video>
+        <div class="video-meta">
+          <span id="recording-date"></span>
+          <span id="recording-duration" class="meta-item"></span>
+        </div>
+      </div>
+      <div class="transcript-section">
+        <h2>Transcript</h2>
+        <div id="transcript" class="transcript">
+          <p>Loading transcript...</p>
+        </div>
+      </div>
+    </div>
+    <script src="/viewer.js"></script>
+  </body>
+</html>

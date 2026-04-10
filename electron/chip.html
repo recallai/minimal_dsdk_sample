@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; style-src 'self' 'unsafe-inline'; connect-src * ws: wss:"
+    />
+    <title>Minimal Desktop Recorder Sample</title>
+  </head>
+  <body>
+    <div id="chip">
+      <!-- Header: always visible -->
+      <div class="chip-header">
+        <span class="chip-title">Minimal Desktop Recorder Sample</span>
+        <button id="btn-quit" class="btn-quit" title="Quit app">Quit</button>
+      </div>
+      <div id="auto-hide-bar-wrap" class="auto-hide-bar-wrap" style="display: none">
+        <div id="auto-hide-bar" class="auto-hide-bar"></div>
+      </div>
+
+      <!-- State: No meeting -->
+      <div id="state-idle" class="state">
+        <p class="status-text">No meetings detected</p>
+        <button id="btn-view-recordings-idle" class="btn btn-link">
+          View Recordings
+        </button>
+      </div>
+
+      <!-- State: Meeting detected, not recording -->
+      <div id="state-detected" class="state" style="display: none">
+        <div class="meeting-info">
+          <span id="meeting-platform" class="meeting-platform"></span>
+          <span id="meeting-title" class="meeting-title"></span>
+        </div>
+        <button id="btn-record" class="btn btn-record">Start Recording</button>
+      </div>
+
+      <!-- State: Recording -->
+      <div id="state-recording" class="state" style="display: none">
+        <div class="recording-header">
+          <span id="recording-indicator" class="recording-dot"></span>
+          <span id="recording-status-text" class="recording-status-text">Recording</span>
+          <span id="recording-duration" class="duration">00:00</span>
+        </div>
+
+        <!-- Live transcript scroll -->
+        <div id="transcript-scroll" class="transcript-scroll"></div>
+
+        <div class="recording-controls">
+          <button id="btn-pause" class="btn btn-pause">Pause</button>
+          <button id="btn-resume" class="btn btn-resume" style="display: none">Resume</button>
+          <button id="btn-stop" class="btn btn-stop">Stop</button>
+        </div>
+      </div>
+
+      <!-- State: Recording complete -->
+      <div id="state-complete" class="state" style="display: none">
+        <p class="status-text">Recording Finished!</p>
+        <button id="btn-view-recording" class="btn btn-link">View Recordings →</button>
+      </div>
+    </div>
+  </body>
+</html>
