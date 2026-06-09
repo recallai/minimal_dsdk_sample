@@ -67,6 +67,9 @@ This produces a `.app` (macOS) or installer (Windows) in `out/`. For distributio
 
 **Meeting not detected** — Make sure you're in an active meeting in Zoom, Google Meet, or Teams. The SDK needs Accessibility permission to detect meeting windows.
 
+## Other Desktop Recording Resources
+If you want to learn more about [recording system audio programmatically](https://www.recall.ai/blog/how-to-access-to-system-audio) we've also written a blog on covering accessing system audio in multiple ways with demos. If you're just interested in [macOS screen capture APIs](https://www.recall.ai/blog/macos-screencapture-api) there is a guide on all of the APIs to record on macOS. For those interested in Granola.ai, we've also put out a blog on open source [Granola.ai alternatives](https://www.recall.ai/blog/granola-ai-alternatives) and a tutorial on how to [build a meeting notetaker like granola](https://www.recall.ai/blog/how-to-build-a-desktop-recording-app). Finally, if you are interested in building a desktop recorder from scratch without Recall.ai, read the blog post on building a [botless recorder](https://www.recall.ai/blog/how-i-built-a-botless-meeting-recorder-from-scratch).
+
 ## License
 
 MIT
