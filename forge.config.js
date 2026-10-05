@@ -16,6 +16,10 @@ module.exports = {
     },
     extendInfo: {
       NSUserNotificationAlertStyle: "alert",
+      NSMicrophoneUsageDescription: "Record your voice during meetings.",
+      NSAudioCaptureUsageDescription: "Record meeting audio for playback and transcription.",
+      NSAppleEventsUsageDescription:
+        "Allow this app to prepare supported meeting applications for high-quality recording.",
     },
   },
   rebuildConfig: {},

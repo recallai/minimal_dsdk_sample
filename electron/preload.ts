@@ -11,11 +11,15 @@ import { contextBridge, ipcRenderer } from "electron";
 const electronAPI = {
   // --- Recording controls ---
   getState: () => ipcRenderer.invoke("get-state"),
-  startRecording: () => ipcRenderer.invoke("start-recording"),
+  startRecording: (useRawMedia: boolean) => ipcRenderer.invoke("start-recording", useRawMedia),
   pauseRecording: () => ipcRenderer.invoke("pause-recording"),
   resumeRecording: () => ipcRenderer.invoke("resume-recording"),
   stopRecording: () => ipcRenderer.invoke("stop-recording"),
   openViewer: () => ipcRenderer.invoke("open-viewer"),
+  requestRawMediaPermission: (permission: "teams-automation" | "browser-automation") =>
+    ipcRenderer.invoke("request-raw-media-permission", permission),
+  sendChatMessage: (message: string) => ipcRenderer.invoke("send-chat-message", message),
+  setSettingsOpen: (open: boolean) => ipcRenderer.invoke("set-settings-open", open),
   // Fire-and-forget via send() instead of invoke() so the renderer doesn't
   // block or throw if the main process is already shutting down.
   quitApp: () => {

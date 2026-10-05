@@ -37,6 +37,18 @@ The first time you run the app, macOS will prompt for accessibility, microphone,
 
 If a permission is denied, you can grant it later in **System Settings > Privacy & Security**. See the [macOS Permissions](https://docs.recall.ai/docs/macos-permissions) docs for more detail.
 
+### Optional Raw Media
+
+[Raw Media](https://docs.recall.ai/docs/desktop-recording-sdk-raw-media) is a stable, opt-in Recall.ai workspace feature. Ask your Recall.ai account team to enable it. It supports Microsoft Teams Desktop and Google Meet in Chrome, Arc, Brave, Comet, or Dia on Apple Silicon Macs running macOS 13 or later. Make a supported browser your default before setting up Google Meet. Windows and unsupported meetings continue to use local capture.
+
+Raw Media recordings are billed at meeting bot rates.
+
+Open the tray chip's **Settings** before joining a meeting. Choose **Enable Teams** or **Enable Meet** to request the corresponding macOS Automation permission. macOS may ask to let the app control Teams or your browser; the application may restart once and restore its session. The settings view shows each permission's reported status. If access is denied, use **System Settings > Privacy & Security > Automation**, then retry setup. Standard accessibility, microphone, and screen-capture permissions remain necessary for local fallback.
+
+**Prefer Raw Media when available** is on by default. Clear it to force local capture for the next recording. The SDK chooses the capture method at recording start; the recording view reports **Raw Media active** or **Local capture active** from the `recording-started.rawMedia` event. Permission status and device compatibility alone cannot confirm workspace enablement or predict whether a particular meeting will use Raw Media. Meeting chat is available in the chip only while a Raw Media recording is active.
+
+To request separate participant raw audio artifacts for Raw Media recordings, set `RECALL_ENABLE_SEPARATE_AUDIO=true` in `.env`. This has no effect for recordings that fall back to local capture. The sample does not download or store these artifacts locally.
+
 ## Project structure
 
 The most important files for understanding the Desktop Recording SDK are `main.ts` and `server.ts`. The other files are primarily concentrated around Electron and UI setup. 

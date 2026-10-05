@@ -52,6 +52,11 @@ export function startServer(port: number | string) {
     try {
       const { data } = await recallApi.post("/api/v1/sdk_upload/", {
         recording_config: {
+          // Separate participant audio is only produced when Raw Media is active.
+          // It is ignored for local capture, and is opt-in to avoid extra artifacts.
+          ...(process.env.RECALL_ENABLE_SEPARATE_AUDIO === "true"
+            ? { audio_separate_raw: {} }
+            : {}),
           // Enable transcription using Recall's built-in provider.
           // No additional API keys or external services needed.
           transcript: {

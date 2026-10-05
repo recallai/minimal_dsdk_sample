@@ -51,6 +51,92 @@ body {
   letter-spacing: 0.02em;
 }
 
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.settings {
+  overflow-y: auto;
+  gap: 10px;
+  padding-right: 2px;
+}
+
+.settings h2 {
+  font-size: 16px;
+}
+
+.settings-note {
+  color: #a1a1aa;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.preference {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.permission-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.permission-row strong {
+  display: block;
+  color: #a5b4fc;
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 3px;
+}
+
+.permission-row .btn {
+  flex: 0 0 110px;
+  padding: 7px 8px;
+  background: #30364a;
+  color: #eef1ff;
+}
+
+.capture-mode {
+  color: #a5b4fc;
+  font-size: 11px;
+  margin: -4px 0 7px;
+}
+
+.chat-form {
+  display: flex;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.chat-form input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: #27272a;
+  color: #fafafa;
+  padding: 6px 8px;
+  font-size: 11px;
+}
+
+.chat-form .btn {
+  background: #30364a;
+  color: #eef1ff;
+  padding: 6px 10px;
+}
+
+.form-error {
+  color: #fca5a5;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .auto-hide-bar-wrap {
   width: 100%;
   height: 3px;

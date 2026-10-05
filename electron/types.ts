@@ -21,4 +21,8 @@ export interface ChipAppState {
   recordingStartTime: number | null;
   recordingElapsedMs: number;
   lastRecordingEndedAt: number | null;
+  sdkReady: boolean;
+  rawMediaDeviceSupported: boolean;
+  rawMediaActive: boolean | null;
+  permissionStatuses: Partial<Record<"teams-automation" | "browser-automation", string>>;
 }

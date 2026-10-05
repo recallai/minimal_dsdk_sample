@@ -48,7 +48,7 @@ export function initChipWindow(config: {
 
   win = new BrowserWindow({
     width: 380,
-    height: 260,
+    height: 320,
     show: false,
     frame: false,
     resizable: false,
@@ -86,6 +86,11 @@ export function initChipWindow(config: {
   });
   ipcMain.handle("open-viewer", () => {
     shell.openExternal(`http://localhost:${config.serverPort}`);
+  });
+  ipcMain.handle("set-settings-open", (_event, open: boolean) => {
+    if (!win) return;
+    if (open) stopAutoHide();
+    win.setSize(380, open ? 440 : 320);
   });
 }
 
