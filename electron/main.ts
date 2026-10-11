@@ -18,6 +18,7 @@ import * as chip from "./chip-window";
 import { startServer } from "./server";
 import { ChipAppState, MeetingWindow, mergeMeetingFields } from "./types";
 import type { Server } from "http";
+import * as os from "os";
 
 dotenv.config();
 
@@ -42,6 +43,15 @@ let recordingElapsedMs = 0;
 let lastRecordingEndedAt: number | null = null;
 let lastMeetingClosedAt = 0;
 let httpServer: Server | null = null;
+let sdkReady = false;
+let recordingStarting = false;
+let activeRecordingWindowId: string | null = null;
+let rawMediaActive: boolean | null = null;
+const permissionStatuses: ChipAppState["permissionStatuses"] = {};
+const rawMediaDeviceSupported =
+  process.platform === "darwin" &&
+  process.arch === "arm64" &&
+  Number.parseInt(os.release().split(".")[0], 10) >= 22;
 
 function getChipState(): ChipAppState {
   return {
@@ -51,6 +61,10 @@ function getChipState(): ChipAppState {
     recordingStartTime,
     recordingElapsedMs,
     lastRecordingEndedAt,
+    sdkReady,
+    rawMediaDeviceSupported,
+    rawMediaActive,
+    permissionStatuses: { ...permissionStatuses },
   };
 }
 
@@ -62,6 +76,8 @@ function finalizeRecording(at = Date.now()) {
   lastRecordingEndedAt = at;
   isRecording = false;
   isPaused = false;
+  activeRecordingWindowId = null;
+  rawMediaActive = null;
 }
 
 // ---------------------------------------------------------------------------
@@ -79,8 +95,14 @@ function finalizeRecording(at = Date.now()) {
 // ---------------------------------------------------------------------------
 
 function bindIpcHandlers() {
-  ipcMain.handle("start-recording", async () => {
+  ipcMain.handle("start-recording", async (_event, useRawMedia: boolean) => {
     if (!detectedMeeting) throw new Error("No meeting detected");
+    if (!sdkReady) throw new Error("SDK is not ready");
+    if (isRecording || recordingStarting) throw new Error("A recording is already starting or active");
+    const windowId = detectedMeeting.id;
+    recordingStarting = true;
+    activeRecordingWindowId = windowId;
+    rawMediaActive = null;
     try {
       // Fetch an upload token from our local server. The server calls the
       // Recall API to create a Desktop SDK Upload with the desired
@@ -93,9 +115,23 @@ function bindIpcHandlers() {
       // Start recording the detected meeting window. The SDK captures
       // both audio and video and begins streaming realtime events.
       await RecallAiSdk.startRecording({
-        windowId: detectedMeeting.id,
+        windowId,
         uploadToken: data.upload_token,
+        disableRawMedia: useRawMedia === false,
       });
+
+      // The meeting can end while the asynchronous start command is in flight.
+      if (activeRecordingWindowId !== windowId) return;
+      if (!detectedMeeting || detectedMeeting.id !== windowId) {
+        try {
+          await RecallAiSdk.stopRecording({ windowId });
+        } catch (error) {
+          console.error("[Main] Failed to stop a recording for a closed meeting:", error);
+        }
+        finalizeRecording();
+        chip.sendState();
+        return;
+      }
 
       chip.stopAutoHide();
       isRecording = true;
@@ -105,15 +141,21 @@ function bindIpcHandlers() {
       lastRecordingEndedAt = null;
       chip.sendState();
     } catch (error) {
+      if (activeRecordingWindowId === windowId) {
+        activeRecordingWindowId = null;
+        rawMediaActive = null;
+      }
       console.error("[Main] Failed to start recording:", error);
       throw error;
+    } finally {
+      recordingStarting = false;
     }
   });
 
   ipcMain.handle("pause-recording", async () => {
-    if (!detectedMeeting || !isRecording) return;
+    if (!activeRecordingWindowId || !isRecording) return;
     try {
-      await RecallAiSdk.pauseRecording({ windowId: detectedMeeting.id });
+      await RecallAiSdk.pauseRecording({ windowId: activeRecordingWindowId });
       if (recordingStartTime) {
         recordingElapsedMs += Date.now() - recordingStartTime;
         recordingStartTime = null;
@@ -127,9 +169,9 @@ function bindIpcHandlers() {
   });
 
   ipcMain.handle("resume-recording", async () => {
-    if (!detectedMeeting || !isRecording) return;
+    if (!activeRecordingWindowId || !isRecording) return;
     try {
-      await RecallAiSdk.resumeRecording({ windowId: detectedMeeting.id });
+      await RecallAiSdk.resumeRecording({ windowId: activeRecordingWindowId });
       isPaused = false;
       recordingStartTime = Date.now();
       chip.sendState();
@@ -140,17 +182,41 @@ function bindIpcHandlers() {
   });
 
   ipcMain.handle("stop-recording", async () => {
-    if (!detectedMeeting || !isRecording) return;
-    finalizeRecording();
-    chip.sendState();
+    if (!activeRecordingWindowId || !isRecording) return;
     try {
       // stopRecording triggers the upload automatically. The "recording-ended"
       // event will fire once the SDK confirms the recording has stopped.
-      await RecallAiSdk.stopRecording({ windowId: detectedMeeting.id });
+      await RecallAiSdk.stopRecording({ windowId: activeRecordingWindowId });
+      if (isRecording) {
+        finalizeRecording();
+        chip.sendState();
+      }
     } catch (error) {
       console.error("[Main] Failed to stop recording:", error);
       throw error;
     }
+  });
+
+  // Automation setup must be requested from a deliberate user action before a call.
+  ipcMain.handle("request-raw-media-permission", async (_event, permission: unknown) => {
+    if (permission !== "teams-automation" && permission !== "browser-automation") {
+      throw new Error("Unsupported automation permission");
+    }
+    if (!sdkReady || !rawMediaDeviceSupported) throw new Error("Raw Media setup is unavailable");
+    if (detectedMeeting || isRecording) {
+      throw new Error("Complete automation setup before joining a meeting");
+    }
+    await RecallAiSdk.requestPermission(permission);
+  });
+
+  ipcMain.handle("send-chat-message", async (_event, message: unknown) => {
+    if (!isRecording || rawMediaActive !== true || !activeRecordingWindowId) {
+      throw new Error("Chat is only available during an active Raw Media recording");
+    }
+    if (typeof message !== "string" || message.trim().length < 1 || message.length > 4096) {
+      throw new Error("Message must be 1–4096 characters");
+    }
+    await RecallAiSdk.sendChatMessage({ windowId: activeRecordingWindowId, message: message.trim() });
   });
 
   ipcMain.on("quit-app", () => {
@@ -177,27 +243,7 @@ async function initSdk() {
   const region = process.env.RECALL_REGION || "us-east-1";
   const apiUrl = `https://${region}.recall.ai`;
 
-  // Step 1: Initialize the SDK with the API URL for your region.
-  // This must be called before any other SDK method.
-  console.log("[SDK] Initializing with API URL:", apiUrl);
-  await RecallAiSdk.init({ apiUrl });
-  console.log("[SDK] init() completed successfully");
-
-  // Step 2: Request macOS permissions. Each call triggers a system prompt if
-  // the permission hasn't been granted yet. All three are required:
-  //   - accessibility: detect meeting windows by title/URL
-  //   - microphone:    capture meeting audio
-  //   - screen-capture: capture the meeting window's video
-  for (const permission of ["accessibility", "microphone", "screen-capture"] as const) {
-    try {
-      await RecallAiSdk.requestPermission(permission);
-      console.log("[SDK] Permission granted/requested:", permission);
-    } catch (error) {
-      console.error("[SDK] Permission request failed:", permission, error);
-    }
-  }
-
-  // Step 3: Register event listeners.
+  // Register listeners before init so initial permission-status events are not missed.
   //
   // The SDK fires events as meetings are detected, metadata updates, and
   // recordings produce data. These are the core events every integration
@@ -236,7 +282,7 @@ async function initSdk() {
       lastMeetingClosedAt = Date.now();
       detectedMeeting = null;
       chip.clearAutoPrompt(event.window.id);
-      if (isRecording) {
+      if (isRecording && activeRecordingWindowId === event.window.id) {
         finalizeRecording();
       }
       chip.sendState();
@@ -248,7 +294,15 @@ async function initSdk() {
   // The SDK automatically uploads the recording at this point.
   RecallAiSdk.addEventListener("recording-ended", (event) => {
     console.log("[SDK] Recording ended for:", event.window.id);
+    if (event.window.id !== activeRecordingWindowId) return;
     finalizeRecording();
+    chip.sendState();
+  });
+
+  RecallAiSdk.addEventListener("recording-started", (event) => {
+    if (event.window.id !== activeRecordingWindowId) return;
+    rawMediaActive = event.rawMedia;
+    console.log("[SDK] Capture mode:", event.rawMedia ? "Raw Media" : "local");
     chip.sendState();
   });
 
@@ -267,7 +321,26 @@ async function initSdk() {
   });
   RecallAiSdk.addEventListener("permission-status", (event) => {
     console.log("[SDK] Permission status:", event.permission, "->", event.status);
+    if (event.permission === "teams-automation" || event.permission === "browser-automation") {
+      permissionStatuses[event.permission] = event.status;
+      chip.sendState();
+    }
   });
+
+  console.log("[SDK] Initializing with API URL:", apiUrl);
+  await RecallAiSdk.init({ apiUrl, acquirePermissionsOnStartup: [] });
+  sdkReady = true;
+  chip.sendState();
+  console.log("[SDK] init() completed successfully");
+
+  // Keep all local-capture permissions so unsupported calls can fall back.
+  for (const permission of ["accessibility", "microphone", "screen-capture"] as const) {
+    try {
+      await RecallAiSdk.requestPermission(permission);
+    } catch (error) {
+      console.error("[SDK] Permission request failed:", permission, error);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -13,7 +13,10 @@
       <!-- Header: always visible -->
       <div class="chip-header">
         <span class="chip-title">Minimal Desktop Recorder Sample</span>
-        <button id="btn-quit" class="btn-quit" title="Quit app">Quit</button>
+        <div class="header-actions">
+          <button id="btn-settings" class="btn-quit" title="Raw Media settings">Settings</button>
+          <button id="btn-quit" class="btn-quit" title="Quit app">Quit</button>
+        </div>
       </div>
       <div id="auto-hide-bar-wrap" class="auto-hide-bar-wrap" style="display: none">
         <div id="auto-hide-bar" class="auto-hide-bar"></div>
@@ -34,6 +37,7 @@
           <span id="meeting-title" class="meeting-title"></span>
         </div>
         <button id="btn-record" class="btn btn-record">Start Recording</button>
+        <p id="record-error" class="form-error" role="alert"></p>
       </div>
 
       <!-- State: Recording -->
@@ -43,9 +47,16 @@
           <span id="recording-status-text" class="recording-status-text">Recording</span>
           <span id="recording-duration" class="duration">00:00</span>
         </div>
+        <p id="capture-mode" class="capture-mode">Checking capture mode…</p>
 
         <!-- Live transcript scroll -->
         <div id="transcript-scroll" class="transcript-scroll"></div>
+
+        <form id="chat-form" class="chat-form" style="display: none">
+          <input id="chat-message" maxlength="4096" placeholder="Message meeting chat" aria-label="Message meeting chat" />
+          <button class="btn" type="submit">Send</button>
+        </form>
+        <p id="chat-error" class="form-error" role="alert"></p>
 
         <div class="recording-controls">
           <button id="btn-pause" class="btn btn-pause">Pause</button>
@@ -58,6 +69,23 @@
       <div id="state-complete" class="state" style="display: none">
         <p class="status-text">Recording Finished!</p>
         <button id="btn-view-recording" class="btn btn-link">View Recordings →</button>
+      </div>
+
+      <div id="state-settings" class="state settings" style="display: none">
+        <h2>Raw Media</h2>
+        <p id="raw-media-availability" class="settings-note"></p>
+        <label class="preference"><input id="prefer-raw-media" type="checkbox" checked /> Prefer Raw Media when available</label>
+        <p class="settings-note">The SDK falls back to local capture when Raw Media is unavailable. Enable automation before joining a meeting. macOS may ask to control Teams or your browser; the app or browser may restart once and restore its session.</p>
+        <div class="permission-row">
+          <span>Teams Desktop <strong id="teams-permission-status">Checking…</strong></span>
+          <button id="btn-teams-permission" class="btn" type="button">Enable Teams</button>
+        </div>
+        <div class="permission-row">
+          <span>Google Meet <strong id="browser-permission-status">Checking…</strong></span>
+          <button id="btn-browser-permission" class="btn" type="button">Enable Meet</button>
+        </div>
+        <p id="settings-error" class="form-error" role="alert"></p>
+        <p class="settings-note">Google Meet requires Chrome, Arc, Brave, Comet, or Dia as the default browser. If denied, allow access in System Settings → Privacy &amp; Security → Automation.</p>
       </div>
     </div>
   </body>
